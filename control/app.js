@@ -23,7 +23,7 @@ MotorX.rotate(500);
 
 wss.on('connection', function connection(ws) {
   console.log('client connected');
-  console.log(ws);
+  // console.log(ws);
   
   ws.on('message', function message(data) {
     console.log('received: %s', data);
@@ -35,7 +35,7 @@ wss.on('connection', function connection(ws) {
 
   });
 
-  ws.send('something');
+  ws.send(JSON.stringify({ev:'SV',msg:'ok'}));
 });
 
 
