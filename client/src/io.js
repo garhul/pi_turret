@@ -1,3 +1,5 @@
+import { getFCP } from "web-vitals";
+
 class Bus {
   constructor(socket) {
     this.socket = new WebSocket(`ws://${window.location.host.split(':')[0]}:3030`);;
@@ -60,14 +62,7 @@ export const BUS = new Bus();
 
 //now for the joystick code
 
-let prevState = {
-  X:0,
-  Y:0,
-  LT:0,
-  RT:0,
-  RB:0,
-  LB:0, 
-}
+let prevState = {};
 
 setInterval(()=> {
   var gamepads = navigator.getGamepads ? navigator.getGamepads() : (navigator.webkitGetGamepads ? navigator.webkitGetGamepads() : []);
@@ -76,18 +71,22 @@ setInterval(()=> {
   }
   const gp = gamepads[0];  
   const st = {
-    X:  Math.floor(gp.axes[0] * 1000),
-    Y:  Math.floor(gp.axes[1] * 1000),
+    Ax:  Math.floor(gp.axes[0] * 1000),
+    Ay:  Math.floor(gp.axes[1] * 1000),
     LT: Math.floor(gp.buttons[6].value * 1000),
     RT: Math.floor(gp.buttons[7].value * 1000),
-    RB: gp.buttons[8].value,
-    LB: Math.floor(gp.buttons[9].value * 1000),
-    R3: gp.buttons.
-    L3:
-    X:
-    Y:
-    A:
-    B:
+    RB: gp.buttons[5].value,
+    LB: gp.buttons[4].value,
+    RSB: gp.buttons[11].value,
+    LSB: gp.buttons[10].value,
+    X: gp.buttons[2].value,
+    Y: gp.buttons[3].value,
+    A: gp.buttons[0].value,
+    B: gp.buttons[1].value,
+    up: gp.buttons[12].value,
+    down: gp.buttons[13].value,
+    left: gp.buttons[14].value,
+    right: gp.buttons[15].value
   };
 
   if(!Object.keys(st).every(v => st[v] === prevState[v])){
