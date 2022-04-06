@@ -1,0 +1,25 @@
+{
+  "name": "turret_control",
+  "version": "1.0.0",
+  "description": "Nerf turret control software",
+  "main": "app.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "serve": "./node_modules/http-server/bin/http-server -S -C cert.pem -o ./public"
+  },
+  "keywords": [
+    "nerf",
+    "turret",
+    "rpi"
+  ],
+  "author": "Garhul <adrian.gesto>",
+  "license": "MIT",
+  "dependencies": {
+    "nanotimer": "^0.3.15",
+    "rpio": "^2.4.2",
+    "ws": "^8.5.0"
+  },
+  "devDependencies": {
+    "http-server": "^14.1.0"
+  }
+}
