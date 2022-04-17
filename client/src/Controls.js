@@ -18,7 +18,7 @@ export function GamepadView() {
       <div className="controlBody">
         <div>
           <svg viewBox="-2.2 -2.2 4.4 4.4" width="240" height="240">
-            <circle cx="0" cy="0" r="2" fill="none" stroke="#444" strokeWidth="0.04" />
+            <circle cx="0" cy="0" r="2" fill="none" stroke="#444" strokeWidth="0.02" />
             <path d="M0,-2L0,2M-2,0L2,0" stroke="#444" strokeWidth="0.02" />
             <circle cx={(pad) ? pad.Ax / 500 : 0} cy={(pad) ? pad.Ay / 500 : 0} r="0.11" fill="#888" className="axis" />        
           </svg>

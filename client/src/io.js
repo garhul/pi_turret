@@ -1,6 +1,8 @@
 class Bus {
   constructor(socket) {
-    this.socket = new WebSocket(`ws://${window.location.host.split(':')[0]}:3030`);;
+    this.socket = new WebSocket(`ws://${window.location.host.split(':')[0]}:3030`);
+    this.socket = new WebSocket(`ws://turret.local:3030`);
+
     this.listeners = [];
     this.of = [];
     this.client_identity = Math.random().toString(36).replace(/[^a-z0-9]+/g, '').substr(0, 18);

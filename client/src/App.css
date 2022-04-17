@@ -28,7 +28,8 @@
   background-color: #333;
   overflow: auto;
   text-align: center;  
-  color:#AAA;
+  color:#CCC;
+  text-shadow: 0px 0px 4px black;
 }
 
 #GamePadView > .controlBody {

@@ -1,56 +1,35 @@
 const { monitorEventLoopDelay } = require('perf_hooks');
 const { WebSocketServer } = require('ws');
-const { MotorX, MotorY } = require('./utils');
+const { Motion } = require('./utils');
 const NanoTimer = require('nanotimer');
-
-const t = new NanoTimer();
-// const MOTOR_B_ACC = 1000;
-// const MOTOR_A_ACC = 1000;
-
-// const MOTOR_A_MAX_SPD = 2000;
-// const MOTOR_B_MAX_SPD = 2000;
-
-// function udpdate_pos() {
-//   console.log('Updating position...');
-// }
-
 
 const wss = new WebSocketServer({ port: 3030 });
 
-console.log('websocket started, awaiting connections...');
+wss.on('listening',()=> {
+  console.log('websocket started, awaiting connections...');
+});
 
-MotorX.rotate(500);
 
+const clients = [];
 wss.on('connection', function connection(ws) {
   console.log('client connected');
+  clients.push(ws);
   // console.log(ws);
   
-  ws.on('message', function message(data) {
-    console.log('received: %s', data);
-    
-    if (data.ev === 'PAD') {
-      MotorX.rotate(data.x);
-      MotorY.rotate(data.y);
-    }
+  ws.on('close', () => {
+    const i = clients.indexOf(ws);
+    clients.splice(i,1);
+  });
 
+  ws.on('message', function message(d) {
+    const {ev, msg} = JSON.parse(d);
+    // console.log(msg, ev);
+    if (ev === 'PAD') {
+      Motion.setASpeed(msg.Ax);
+      Motion.setBSpeed(msg.Ay);
+    }
   });
 
   ws.send(JSON.stringify({ev:'SV',msg:'ok'}));
 });
-
-
-//test rotation for motorx
-
-
-
-// var start = new Date();
-// var i = 0;
-
-// t.setInterval(function(){
-//     if (++i >= 1000) {
-//         var end = new Date();
-//         console.log(`The average interval was ${((end-start)/1000)} milliseconds`);
-//         t.clearInterval();
-//     }
-// },'', '100u');
 

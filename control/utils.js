@@ -3,69 +3,121 @@ const NanoTimer = require('nanotimer');
 rpio.init();
 
 const PINS = {
-  A_DIR: 11,
-  B_DIR: 7,
-  A_STEP: 13,
-  B_STEP: 15,
-  ENABLE: 22,
+ 
 };
 
 exports.delay = function delay (ms) {
   return new Promise(r => setTimeout(r, ms));
 }
 
-/* 
-let's say max speed is 60 rpm, so 1 rev per second, so steps_per_rev per second.
 
-so, if I'm at maximum speed I'd expect to create steps_per_rev pulses in 1 second, 
+class Motion {  
+  constructor() {
+    this.pins = {
+      A_DIR: 11,
+      B_DIR: 7,
+      A_STEP: 13,
+      B_STEP: 15,
+      ENABLE: 22,
+    }
+    
+    this.timer = new NanoTimer();    
+    
+    this.steps_a = 0;
+    this.steps_b = 0;
+    this.position_a = 0;
+    this.position_b = 0;
+    this.pinval_a = 0;
+    this.pinval_b = 0;
 
-so 1000ms / steps_per_rev -> 1000 / 200 = 5 (1 step per ms)
-
-
-
-
-*/
-
-class Motor {  
-  constructor(step_pin, dir_pin) {
-    this.step_pin = step_pin;
-    this.dir_pin = dir_pin;    
-    this.steps = 0;
-    this.steps_per_rev = 200;
-    this.position = 0;
     this.turning = false;
     this.spd = 0;
-    this.timer = new NanoTimer();
-    this.pinval = 0;
+    this.baseSpd = 500; //microseconds of delay
 
-    rpio.mode(dir_pin, rpio.OUTPUT);
-    rpio.mode(step_pin, rpio.OUTPUT);
+    Object.keys(this.pins).forEach(p => {
+      rpio.mode(this.pins[p], rpio.OUTPUT);
+    });
     
-    rpio.write(this.step_pin, 0);
-    rpio.write(this.dir_pin, 0);
-    
-    this._update();
-    this.timer.setInterval(()=> {this._update()},'', '500u')
+    this.disable();
   }
   
-  _update() {
-    if (this.spd === 0) return;
-    this.pinval = ++this.pinval % 2;
+  _updateB() {
+    if (this.spd_b === 0) return;
     
-    rpio.write(this.step_pin, this.pinval);
+    rpio.write(this.pins.B_DIR, (this.spd_b > 0)? 1 : 0);
+    this.pinval_b = ++this.pinval_b % 2;
+    
+    rpio.write(this.pins.B_STEP, this.pinval_b);
+
+
+    this.timer.setTimeout(()=> this._updateB(),'', `${this.timing_b}u`);
   }
 
-  rotate(spd) {    
-    console.log('rotation set');
-    rpio.write(this.dir_pin, (spd > 0)? 1 : 0);
-    this.spd = spd;    
-    console.log(this.spd);
+  _updateA() {
+    if (this.spd_a === 0) return;
+    
+    rpio.write(this.pins.A_DIR, (this.spd_a > 0)? 1 : 0);
+    this.pinval_a = ++this.pinval_a % 2;
+    
+    rpio.write(this.pins.A_STEP, this.pinval_a);
+
+    this.timer.setTimeout(() => this._updateB(),'', `${this.timing_a}u`);
+  }
+
+  enable() {
+    rpio.write(this.pins.ENABLE, 0);
+  }
+
+  disable() {
+    rpio.write(this.pins.ENABLE, 1);
+  }
+
+  rotateA(deg) {
+
+  }
+
+  rotateB(deg) {
+
+  }
+ 
+  setASpeed(spd) {        
+    this.spd_a = spd;
+    if (spd !== 0) {
+      this.timing_a = this.baseSpd / (1000 / Math.abs(spd));
+      this._updateA();
+    }
+  }
+
+  setBSpeed(spd) {
+    this.spd_b = spd;
+    if (spd !== 0) {    
+      this.timing_b = this.baseSpd / (1000 / Math.abs(spd));
+      this._updateB();
+    }
   }
 }
 
 
-exports.MotorX = new Motor(PINS.A_STEP,PINS.A_DIR);
-// exports.MotorY = new Motor(PINS.B_STEP,PINS.B_DIR);
+class Guns {
+  constructor() {
+    this.pins = {
+      LASER: 23,
+      SOLENOID: 0,
+      SERVO: 0,
+      BARREL_MOTOR:0,
+      BARREL_SENSOR:0,
+    }
 
-exports.GunR = {}
-exports.GunL = {}
+
+  }
+
+  advance() {}
+  shoot(){}
+  
+  toggleLaser() {
+
+  }
+}
+
+exports.Motion = new Motion();
+exports.Guns = new Guns();
