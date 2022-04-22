@@ -51,7 +51,12 @@ export function GamepadView() {
 export function VideoFeed() {
   return (
     <div id="VideoFeed">
-      Video goes here
+      <img src="http://garlic.local:8080/?action=stream" />
+      
+      <div>buttons
+        <button>IR LEDS on/off</button>
+        <div id="tilt-ruler"></div>
+      </div>
     </div>
   )
 }
