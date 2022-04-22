@@ -208,6 +208,7 @@ namespace PLATFORM {
   }
 
   void home(byte axis, byte spd) {
+    Serial.println("Homing");
     if (state != STATE::READY) return;
     state = STATE::HOMING;
         
@@ -306,6 +307,16 @@ namespace PLATFORM {
     String(_laser) + "|").c_str();
   }
 
+
+  void loadAmmoSequence() {
+    // unlock servo to allow barrel movement
+    // rotate motor until it hits sensor
+    // use same logic as for homing     
+  }
+
+  void lockAmmoSequence() {
+    // move servo until it locks the barrel    
+  }
 }
 
 #endif

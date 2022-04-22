@@ -45,13 +45,12 @@ enum CMDS {
   MOVE_TO_ANGLE, //0 x04
   MOVE_CONT, // 0x05
   HOME, // 0x06
-  LASER_ON, // 0x07
-  LASER_OFF, // 0x08
-  SHOOT_L,  // 0x09
-  SHOOT_R, // 0x0A
-  LOCK_AMMO_R, // 0x0C
-  LOAD_AMMO_L, // 0x0D
-  LOAD_AMMO_R  // 0x0E
+  SET_LASER, // 0x07  
+  LOAD_AMMO, // 0x08
+  LOCK_AMMO, // 0x09
+  SHOOT,  // 0x0A
+  // ARM, // 0x08
+  // DISARM,
 };
 
 namespace PARSER {
@@ -64,6 +63,7 @@ namespace PARSER {
     byte speed = 0;
     bool dir = true;
     int angle = 0;
+    char shotDuration = 100;
     
     Serial.println(buff[0], HEX);
 
@@ -124,11 +124,9 @@ namespace PARSER {
       break;   
 
       case CMDS::SHOOT: 
-        Serial.println("Shooting Left gun");
-        
-        Serial.println("Shooting right gun");
-        
-        // Platform::shoot(0, )
+        Serial.println("Shooting gun");
+        shotDuration = ((buff[2] & 254) >> 1); 
+        PLATFORM::shoot(buff[1] & 1, shotDuration * 10); // every 1 unit represents 10ms, so range goes from 10 ms to 1280 ms
       break;
 
     }
