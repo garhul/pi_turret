@@ -49,6 +49,9 @@ enum CMDS {
   LOAD_AMMO, // 0x08
   LOCK_AMMO, // 0x09
   SHOOT,  // 0x0A
+  STOP, //0x0B
+  SERVO_PWM, //0x0C
+
   // ARM, // 0x08
   // DISARM,
 };
@@ -70,8 +73,8 @@ namespace PARSER {
     switch (buff[0]) {
       case CMDS::MOVE_STEPS: //Move motor by steps
         Serial.println("Advancing steps");
-        axes = CHANNEL_MASK & buff[1] >> 6;
-        steps = buff[2] << 8 + buff[3];
+        axes = (CHANNEL_MASK & buff[1]) >> 6;
+        steps = (buff[2] << 8) + buff[3];
         speed = MOVE_SPEED_MASK & buff[1];
         dir = DIR_MASK & buff[1] >> 5;
 
@@ -83,7 +86,7 @@ namespace PARSER {
         // 0b11000000 => channels to home [0b00 -> Yaw, 0b01 -> pitch, 0b10 -> camera, 0b11-> all]
         // 0b00111111 => speed as 1/64 of MAX_SPD
         Serial.println("Homing");
-        axes = CHANNEL_MASK & buff[1] >> 6;
+        axes = (CHANNEL_MASK & buff[1]) >> 6;
         speed = HOME_SPEED_MASK & buff[1];
 
         PLATFORM::home(axes, speed);
@@ -91,19 +94,19 @@ namespace PARSER {
       
       case CMDS::MOVE_CONT: // Continue motor movement by altering their current speed        
         Serial.println("Accelerating");
-        axes = CHANNEL_MASK & buff[1] >> 6;      
+        axes = (CHANNEL_MASK & buff[1]) >> 6;      
         speed = MOVE_SPEED_MASK & buff[1];
-        dir = DIR_MASK & buff[1] >> 5;
+        dir = (DIR_MASK & buff[1]) >> 5;
 
         PLATFORM::setSpeed(axes, dir, speed);      
       break;
 
       case CMDS::MOVE_TO_ANGLE: // Radial move to an specific angle       
         Serial.println("move to angle") ;
-        axes = CHANNEL_MASK & buff[1] >> 6;      
+        axes = (CHANNEL_MASK & buff[1]) >> 6;      
         speed = MOVE_SPEED_MASK & buff[1];
-        dir = DIR_MASK & buff[1] >> 5;
-        angle = buff[2] << 8 + buff[3];      
+        dir = (DIR_MASK & buff[1]) >> 5;
+        angle = (buff[2] << 8) + buff[3];      
         
         PLATFORM::setAngle(axes, dir, speed, angle);
       break;
@@ -125,10 +128,20 @@ namespace PARSER {
 
       case CMDS::SHOOT: 
         Serial.println("Shooting gun");
-        shotDuration = ((buff[2] & 254) >> 1); 
+        shotDuration = ((buff[1] & 254) >> 1); 
         PLATFORM::shoot(buff[1] & 1, shotDuration * 10); // every 1 unit represents 10ms, so range goes from 10 ms to 1280 ms
       break;
 
+      case CMDS::STOP:
+        Serial.println("STOPPING!");
+        axes = (CHANNEL_MASK & buff[1]) >> 6;
+        PLATFORM::stopMovement(axes);
+      break;
+
+      case CMDS::SERVO_PWM:
+        Serial.println("Setting servo position");
+        axes = (CHANNEL_MASK & buff[1]) >> 6;
+        PLATFORM::setServo(byte pos);
     }
   }
 }

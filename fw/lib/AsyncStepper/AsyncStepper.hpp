@@ -41,7 +41,6 @@ public:
 		Breaking
 	};
 
-
 	AsyncStepper(uint16_t motorSteps, StepperCallback actionCW, StepperCallback actionCCW)
 	{
 		MotorSteps = motorSteps;
@@ -112,9 +111,11 @@ public:
 		RotateAngleInTime(angleDelta, time, direction, OnFinish);
 	}
 
-
 	void RotateContinuous(StepperDirection direction)
 	{
+
+    Serial.println("Setting continuous rotation");
+
 		Direction = direction;
 		OnFinish = nullptr;
 
@@ -131,7 +132,7 @@ public:
 	uint16_t Update()
 	{
 		if (State == StepperState::Stopped) return false;
-
+    // Serial.println("running");
 		uint16_t stepsDone = 0;
 		while (static_cast<unsigned long>(micros() - LastStepTime) >= Interval)
 		{
@@ -144,9 +145,9 @@ public:
 		return stepsDone;
 	}
 
-
 	void SetSpeed(long speed)
 	{
+    Serial.println("setting spd");
 		MaxSpeed = speed;
 	}
 
@@ -171,8 +172,6 @@ public:
 		Acceleration = acceleration;
 		Deceleration = deceleration;
 	}
-
-
 
 	long GetRemainSteps() const
 	{
@@ -348,15 +347,26 @@ private:
 		LastStepTime = TravelStartTime;
 	}
 
-	void Step()
-	{
-		if (Direction == StepperDirection::CW) StepCW();
-		else StepCCW();
+	void Step() {
+		if (Direction == StepperDirection::CW) {
+      	digitalWrite(PinDir, HIGH);
+        AbsoluteStep++;
+		} else {
+      	digitalWrite(PinDir, LOW);
+        AbsoluteStep--;
+    }
+
+    digitalWrite(PinStep, HIGH);
+		delayMicroseconds(PulseOnWidth);
+		digitalWrite(PinStep, LOW);
 
 		TravelCurrentStep++;
 
 		UpdateState();
 		UpdateInterval();
+    
+    // Serial.println(AbsoluteStep);
+    // Serial.println(millis());
 	}
 
 	void UpdateState()
@@ -429,36 +439,6 @@ private:
 		return (speed * speed) / (2.0f * acceleration);
 	}
 
-	void StepCW()
-	{
-		if (ActionCW != nullptr) ActionCW();
-		else
-		{
-			digitalWrite(PinDir, HIGH);
-			DigitalPulse(PinStep);
-		}
-
-		AbsoluteStep++;
-	}
-
-	void StepCCW()
-	{
-		if (ActionCCW != nullptr) ActionCCW();
-		else
-		{
-			digitalWrite(PinDir, HIGH);
-			DigitalPulse(PinStep);
-		}
-
-		AbsoluteStep--;
-	}
-
-	void DigitalPulse(int pin) const
-	{
-		digitalWrite(pin, HIGH);
-		delayMicroseconds(PulseOnWidth);
-		digitalWrite(pin, LOW);
-	}
 };
 #endif
 

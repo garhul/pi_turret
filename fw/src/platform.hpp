@@ -3,14 +3,15 @@
 
 #include <Arduino.h>
 #include <AsyncStepper.hpp>
+#include <Adafruit_PWMServoDriver.h>
 
 // PLATFORM
 #define YAW_DIR PB11
 #define YAW_STEP PB10
 #define YAW_HOME_SENSE PA6
-#define PITCH_DIR PB0
-#define PITCH_STEP PA7
-#define MOTOR_ENABLE PB1
+#define PITCH_DIR PB1
+#define PITCH_STEP PB0
+#define MOTOR_ENABLE PA7
 
 #define PITCH_HOME_SENSE PA5
 #define CURRENT_SENSE PA0
@@ -80,10 +81,17 @@ namespace PLATFORM {
 
   AsyncStepper yawMotor(YAW_STEPS_PER_REV, YAW_DIR, YAW_STEP);
   AsyncStepper pitchMotor(PITCH_STEPS_PER_REV, PITCH_DIR, PITCH_STEP);
+  
+  Adafruit_PWMServoDriver ServoL = Adafruit_PWMServoDriver();
+
   #ifdef MOTORIZED_PI_CAM
     AsyncStepper camMotor(CAM_STEPS_PER_REV, CAMERA_MOTOR_DIR, CAMERA_MOTOR_STEP);
   #endif
 
+
+  void setServo(byte pos) {
+    
+  }
 
   bool isMoving() {
     return true;
@@ -158,6 +166,9 @@ namespace PLATFORM {
   }
 
   AsyncStepper* _getStepper(char axis) {
+    Serial.println("getting motor:");
+    Serial.println(axis, HEX);
+
     if (axis == 0) {
       return &yawMotor;
     } if (axis == 1) {
@@ -174,8 +185,14 @@ namespace PLATFORM {
   /** Move an axis a number of steps at a given speed */
   void move (byte axis, bool dir, byte speed, byte steps) {    
     
+    if (axis > 1) {
+      Serial.println("axis out of range");
+      Serial.print(axis, HEX);
+      return;
+    }
+
     AsyncStepper *Motor = _getStepper(axis);
-    
+
     if(Motor->State != AsyncStepper::Running) return; 
 
     if (speed != 0)
@@ -185,9 +202,24 @@ namespace PLATFORM {
 
   }
 
+  void stopMovement(byte axis) {
+    AsyncStepper *Motor = _getStepper(axis);
+    Motor->Stop();
+  }
   /** set the motor in a continually rotating movement at a given speed (as controlled by a joypad) */
   void setSpeed(byte axis, bool dir, byte speed) {
-      
+     if (axis > 1) {
+      Serial.println("axis out of range");
+      Serial.print(axis, HEX);
+      return;
+    }
+      Serial.print("[");
+      Serial.print(axis, HEX);
+      Serial.print(" - ");
+      Serial.print(dir, HEX);
+      Serial.print(" - ");
+      Serial.print(speed, HEX);
+
       AsyncStepper *Motor = _getStepper(axis);
 
       Motor->SetSpeed(speed);
@@ -199,6 +231,12 @@ namespace PLATFORM {
    * 
   */
   void setAngle(byte axis, bool dir, byte speed, int angle) {
+    if (axis > 1) {
+      Serial.println("axis out of range");
+      Serial.print(axis, HEX);
+      return;
+    }
+
     AsyncStepper *Motor = _getStepper(axis);
 
       if (speed != 0)
@@ -208,6 +246,12 @@ namespace PLATFORM {
   }
 
   void home(byte axis, byte spd) {
+    if (axis > 1) {
+      Serial.println("axis out of range");
+      Serial.print(axis, HEX);
+      return;
+    }
+
     Serial.println("Homing");
     if (state != STATE::READY) return;
     state = STATE::HOMING;
@@ -289,7 +333,7 @@ namespace PLATFORM {
     }
     
     digitalWrite(GUN_L_SOLENOID, l_solenoid_state);
-    digitalWrite(GUN_L_SOLENOID, r_solenoid_state);
+    digitalWrite(GUN_R_SOLENOID, r_solenoid_state);
 
   }
 
