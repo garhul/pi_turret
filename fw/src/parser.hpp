@@ -6,6 +6,7 @@
 #define BUFF_SIZE 8
 
 #define CHANNEL_MASK 0b11000000
+#define SERVO_CHANNEL_MASK 0b11000000
 #define HOME_SPEED_MASK 0b00111111
 #define MOVE_SPEED_MASK 0b00011111
 #define DIR_MASK 0b00100000
@@ -140,8 +141,8 @@ namespace PARSER {
 
       case CMDS::SERVO_PWM:
         Serial.println("Setting servo position");
-        axes = (CHANNEL_MASK & buff[1]) >> 6;
-        PLATFORM::setServo(byte pos);
+        axes = (SERVO_CHANNEL_MASK & buff[1]) >> 6;        
+        PLATFORM::setServoPos(axes, buff[1] & 0b00111111 );
     }
   }
 }

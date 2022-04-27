@@ -3,7 +3,7 @@
 
 #include <Arduino.h>
 #include <AsyncStepper.hpp>
-#include <Adafruit_PWMServoDriver.h>
+#include <Servo.h>
 
 // PLATFORM
 #define YAW_DIR PB11
@@ -82,16 +82,16 @@ namespace PLATFORM {
   AsyncStepper yawMotor(YAW_STEPS_PER_REV, YAW_DIR, YAW_STEP);
   AsyncStepper pitchMotor(PITCH_STEPS_PER_REV, PITCH_DIR, PITCH_STEP);
   
-  Adafruit_PWMServoDriver ServoL = Adafruit_PWMServoDriver();
 
+  Servo ServoR;   
+  Servo ServoL;   
+  
   #ifdef MOTORIZED_PI_CAM
     AsyncStepper camMotor(CAM_STEPS_PER_REV, CAMERA_MOTOR_DIR, CAMERA_MOTOR_STEP);
   #endif
 
 
-  void setServo(byte pos) {
-    
-  }
+
 
   bool isMoving() {
     return true;
@@ -160,6 +160,12 @@ namespace PLATFORM {
     pinMode(GUN_L_SERVO, OUTPUT);
     pinMode(GUN_R_SERVO, OUTPUT);
     
+    ServoL.attach(GUN_L_SERVO); 
+    ServoL.write(0);
+    ServoR.attach(GUN_R_SERVO); 
+    ServoR.write(0);
+
+
     pinMode(GUN_L_BARREL_SENSE, INPUT_PULLUP);
     pinMode(GUN_R_BARREL_SENSE, INPUT_PULLUP);
 
@@ -182,6 +188,17 @@ namespace PLATFORM {
     return nullptr;
   }
 
+  void setServoPos(byte channel, byte pos) {
+    if (channel == 0) {
+      Serial.println("setting servoL to");
+      Serial.println(map(pos, 0 , 63 , 0 , 65535));
+      ServoL.write(map(pos, 0 , 63 , 0 , 65535));
+    } else if (channel == 1) {
+      Serial.println("setting servoR to");
+      Serial.println(map(pos, 0 , 63 , 0 , 65535));
+      ServoR.write(map(pos, 0 , 63 , 0 , 65535));
+    }
+  }
   /** Move an axis a number of steps at a given speed */
   void move (byte axis, bool dir, byte speed, byte steps) {    
     
