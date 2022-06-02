@@ -221,18 +221,20 @@ function processController(info) {
   for (const key of keys) {
     info[key].textContent = gamepad[key];
   }
+  
   axes.forEach(({axis, value}, ndx) => {
     const off = ndx * 2;
     axis.setAttributeNS(null, 'cx', gamepad.axes[off    ] * fudgeFactor);
     axis.setAttributeNS(null, 'cy', gamepad.axes[off + 1] * fudgeFactor);
     value.textContent = `${gamepad.axes[off].toFixed(2).padStart(5)},${gamepad.axes[off + 1].toFixed(2).padStart(5)}`;
   });
-  buttons.forEach(({circle, value}, ndx) => {
-    const button = gamepad.buttons[ndx];
-    circle.setAttributeNS(null, 'r', button.value * fudgeFactor);
-    circle.setAttributeNS(null, 'fill', button.pressed ? 'red' : 'gray');
-    value.textContent = `${button.value.toFixed(2)}`;
-  });
+  
+  // buttons.forEach(({circle, value}, ndx) => {
+  //   const button = gamepad.buttons[ndx];
+  //   circle.setAttributeNS(null, 'r', button.value * fudgeFactor);
+  //   circle.setAttributeNS(null, 'fill', button.pressed ? 'red' : 'gray');
+  //   value.textContent = `${button.value.toFixed(2)}`;
+  // });
   
 //  lines.push(`axes     : [${gamepad.axes.map((v, ndx) => `${ndx}: ${v.toFixed(2).padStart(5)}`).join(', ')} ]`);
 //  lines.push(`buttons  : [${gamepad.buttons.map((v, ndx) => `${ndx}: ${onOff(v.pressed)} ${v.value.toFixed(2)}`).join(', ')} ]`);

@@ -69,7 +69,7 @@ namespace PARSER {
     int angle = 0;
     char shotDuration = 100;
     
-    Serial.println(buff[0], HEX);
+    // Serial.println(buff[0], HEX);
 
     switch (buff[0]) {
       case CMDS::MOVE_STEPS: //Move motor by steps
@@ -94,7 +94,7 @@ namespace PARSER {
       break;
       
       case CMDS::MOVE_CONT: // Continue motor movement by altering their current speed        
-        Serial.println("Accelerating");
+        // Serial.println("Accelerating");
         axes = (CHANNEL_MASK & buff[1]) >> 6;      
         speed = MOVE_SPEED_MASK & buff[1];
         dir = (DIR_MASK & buff[1]) >> 5;
@@ -134,7 +134,7 @@ namespace PARSER {
       break;
 
       case CMDS::STOP:
-        Serial.println("STOPPING!");
+        Serial.println("Stopping");
         axes = (CHANNEL_MASK & buff[1]) >> 6;
         PLATFORM::stopMovement(axes);
       break;
@@ -143,6 +143,7 @@ namespace PARSER {
         Serial.println("Setting servo position");
         axes = (SERVO_CHANNEL_MASK & buff[1]) >> 6;        
         PLATFORM::setServoPos(axes, buff[1] & 0b00111111 );
+      break;
     }
   }
 }

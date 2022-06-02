@@ -16,21 +16,22 @@
 //******************************* END PIN CONFIG ******************************//
 
 void fn(int len) {
- digitalWrite(PC13, !digitalRead(PC13));
- Serial.println("a");
+ digitalWrite(PC13, !digitalRead(PC13)); 
  char buff[8];
   for (int i = 0; i < len; i++) {
     buff[i] = Wire.read();
   }
   
-  Serial.print("parsing command: ");
-    for (int i =0; i < BUFF_SIZE; i++) {
-      Serial.print(buff[i], HEX);
-      Serial.print(" ");
-    }
-
-  Serial.println(" |");
   PARSER::parse(buff);
+  
+  // Serial.print("parsing command: ");
+  //   for (int i =0; i < BUFF_SIZE; i++) {
+  //     Serial.print(buff[i], HEX);
+  //     Serial.print(" ");
+  //   }
+
+  // Serial.println(" |");
+  
 }
 
 void i2c_req() {
