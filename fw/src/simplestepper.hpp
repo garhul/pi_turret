@@ -60,12 +60,12 @@ class SimpleStepper {
       this->position = 0;
     }
 
-    void setAcceleration(float a) {
-      this->acceleration = a;
+    void setAcceleration(uint16_t val) {     
+      this->acceleration =  10000 / val; // TODO::map from 0.8 to 1.2 ;
     }
 
-    void setDeceleration(float d) {
-      this->deceleration = d;
+    void setDeceleration(uint16_t val) {
+      this->deceleration = 10000 / val;
     }
 
     void setSoftLimit(uint32_t limit) {

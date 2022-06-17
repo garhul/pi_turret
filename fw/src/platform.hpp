@@ -61,11 +61,14 @@ enum STATE {
   BUSY
 };
 
-// typedef struct command {
-//   uint8_t cmd = 0;
-//   uint8_t speed = 0;
-//   uint8_t 
-// } 
+
+enum PROPERTIES {
+  ACCELERATION,
+  DECELERATION,
+  MAX_SPEED,
+  SOFT_LIMIT_POSITION,
+  CURRENT_POSITION,
+};
 
 namespace PLATFORM {
 
@@ -74,28 +77,31 @@ namespace PLATFORM {
     int ptichPos;
     int camPos;
     int vBat;
-    char laser : 1 ;    
+    char laser : 1;
   };
 
-  typedef struct platformState platformState;
+  
 
   byte _homing_ = 0;    
+  bool l_barrel_seeking = false;
+  bool r_barrel_seeking = false;
   byte state = READY;
   bool _laser = 0;
   bool l_solenoid_state = 0;
   bool r_solenoid_state = 0;
+
   unsigned long l_solenoid_on_time_us = 100;
   unsigned long r_solenoid_on_time_us = 100;
 
   SimpleStepper yawMotor(YAW_STEPS_PER_REV, YAW_DIR, YAW_STEP);
   SimpleStepper pitchMotor(PITCH_STEPS_PER_REV, PITCH_DIR, PITCH_STEP);
-  
-  Servo ServoR;   
-  Servo ServoL;   
-  
   #ifdef MOTORIZED_PI_CAM
     SimpleStepper camMotor(CAM_STEPS_PER_REV, CAMERA_MOTOR_DIR, CAMERA_MOTOR_STEP);
   #endif
+
+  Servo ServoR;   
+  Servo ServoL;   
+  
 
   bool isMoving() {
     return true;
@@ -137,6 +143,18 @@ namespace PLATFORM {
     #endif    
   }
 
+  void ISR_l_barrel_pos() {      
+    Serial.println("L_BARREL_INDEX");
+    digitalWrite(GUN_L_BARREL_MOTOR, LOW);
+    l_barrel_seeking = false;
+  }
+
+  void ISR_r_barrel_pos() {      
+    Serial.println("R_BARREL_INDEX");
+    digitalWrite(GUN_R_BARREL_MOTOR, LOW);
+    r_barrel_seeking = false;
+  }
+
   void begin() {
     //set pins
     pinMode(YAW_DIR, OUTPUT);
@@ -156,6 +174,9 @@ namespace PLATFORM {
       attachInterrupt(digitalPinToInterrupt(CAMERA_MOTOR_SENSOR), ISR_c_home, RISING);
     #endif
 
+    attachInterrupt(digitalPinToInterrupt(GUN_L_BARREL_SENSE), ISR_l_barrel_pos, RISING);
+    attachInterrupt(digitalPinToInterrupt(GUN_R_BARREL_SENSE), ISR_r_barrel_pos, RISING);
+    
     pinMode(LASER, OUTPUT);
     pinMode(MOTOR_ENABLE, OUTPUT);
 
@@ -169,12 +190,9 @@ namespace PLATFORM {
     ServoR.attach(GUN_R_SERVO); 
     ServoR.write(0);
 
-
     pinMode(GUN_L_BARREL_SENSE, INPUT_PULLUP);
     pinMode(GUN_R_BARREL_SENSE, INPUT_PULLUP);
-
     //pitchMotor.setSoftLimit(pitchMotor.stepsPerRev * 1); //360 degrees movement
-
   }
 
   SimpleStepper* _getStepper(char axis) {
@@ -256,14 +274,8 @@ namespace PLATFORM {
 
     SimpleStepper *Motor = _getStepper(axis);
 
-    if (axis  == 0) {
-      computed_speed = speed * Y_SPEED_MULTIPLIER;
-    } else if (axis == 1) {
-      computed_speed = speed * P_SPEED_MULTIPLIER;
-    }
-
-    if (computed_speed != 0) {
-      Motor->setTargetSpeed(computed_speed);
+    if (speed != 0) {
+      Motor->setTargetSpeed(speed);
       // Motor->RotateToAngle( angle / 10 ,(dir)? SimpleStepper::CCW : SimpleStepper::CW);    
     }
   }
@@ -343,6 +355,8 @@ namespace PLATFORM {
     digitalWrite(GUN_L_SOLENOID, l_solenoid_state);
     digitalWrite(GUN_R_SOLENOID, r_solenoid_state);
 
+    if (digitalRead())
+
   }
 
   void disableMotors() {
@@ -367,6 +381,41 @@ namespace PLATFORM {
 
   void lockAmmoSequence() {
     // move servo until it locks the barrel    
+  }
+
+  void setProperty(uint8_t axis, uint8_t property, uint16_t value) {
+    SimpleStepper *Motor = _getStepper(axis);
+
+    switch(property) {
+      case ACCELERATION:        
+        Motor->setAcceleration(value);
+      break;
+      case DECELERATION:
+        Motor->setDeceleration(value);
+      break;
+      case MAX_SPEED:
+        // not implemented
+      break;
+      case SOFT_LIMIT_POSITION:
+        Motor->setSoftLimit(value);
+      break;
+      case CURRENT_POSITION:
+        Motor->position = value;
+      break;
+    }
+
+  }
+
+  void nextDart(uint8_t chan) {    
+    if (chan == 0) {
+      if (l_barrel_seeking == true) return;
+      digitalWrite(GUN_L_BARREL_MOTOR, HIGH);
+      l_barrel_seeking = true;
+    } else {
+      if (r_barrel_seeking == true) return;
+      digitalWrite(GUN_R_BARREL_MOTOR, HIGH);
+      r_barrel_seeking = true;
+    }
   }
 }
 

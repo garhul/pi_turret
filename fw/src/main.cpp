@@ -1,7 +1,8 @@
 #include <Arduino.h>
 #include <Wire.h>
 #include <platform.hpp>
-#include <parser.hpp>
+#include <cmdDispatcher.hpp>
+#include <types.h>
 
 #define I2C_ADDR 0x45
 
@@ -14,24 +15,28 @@
 #define TX PA9 
 
 //******************************* END PIN CONFIG ******************************//
+#define BUFF_SIZE 8
+
+inline command parseMessage (uint8_t buff[BUFF_SIZE]) {
+  command c = {
+    .cmd = static_cast<uint8_t>(buff[0] >> 2),
+    .channel = static_cast<uint8_t>(buff[0]>> 6),
+    .payload = {buff[1],buff[2],buff[3],buff[4]}
+  };
+  
+  return c;
+}
+
 
 void fn(int len) {
  digitalWrite(PC13, !digitalRead(PC13)); 
- char buff[8];
+ 
+ uint8_t buff[BUFF_SIZE];
   for (int i = 0; i < len; i++) {
     buff[i] = Wire.read();
   }
   
-  PARSER::parse(buff);
-  
-  // Serial.print("parsing command: ");
-  //   for (int i =0; i < BUFF_SIZE; i++) {
-  //     Serial.print(buff[i], HEX);
-  //     Serial.print(" ");
-  //   }
-
-  // Serial.println(" |");
-  
+  COMMAND_DISPATCHER::dispatch(parseMessage(buff));  
 }
 
 void i2c_req() {
