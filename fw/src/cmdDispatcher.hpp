@@ -89,6 +89,10 @@ namespace COMMAND_DISPATCHER {
         PLATFORM::enableMotors();      
       break;
       
+      // ---------------------------------------------------------- //
+      //                Gun related commands                     //
+      // ---------------------------------------------------------- //
+
       case CMDS::SET_LASER_STATE: //toggle laser
         Serial.println("Laser");
         PLATFORM::setLaser(c.payload[0] & 1);        
@@ -137,7 +141,7 @@ namespace COMMAND_DISPATCHER {
       // ---------------------------------------------------------- //
       case CMDS::BARREL_NEXT_DART:
         Serial.println("Loading next dart");
-        PLATFORM::nextDart();
+        PLATFORM::nextDart(c.channel);
       break;
     }
   }

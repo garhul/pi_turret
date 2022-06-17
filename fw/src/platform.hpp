@@ -72,16 +72,6 @@ enum PROPERTIES {
 
 namespace PLATFORM {
 
-  struct platformState {
-    int yawPos;
-    int ptichPos;
-    int camPos;
-    int vBat;
-    char laser : 1;
-  };
-
-  
-
   byte _homing_ = 0;    
   bool l_barrel_seeking = false;
   bool r_barrel_seeking = false;
@@ -275,7 +265,7 @@ namespace PLATFORM {
     SimpleStepper *Motor = _getStepper(axis);
 
     if (speed != 0) {
-      Motor->setTargetSpeed(speed);
+      // Motor->setTargetSpeed(speed);
       // Motor->RotateToAngle( angle / 10 ,(dir)? SimpleStepper::CCW : SimpleStepper::CW);    
     }
   }
@@ -355,8 +345,6 @@ namespace PLATFORM {
     digitalWrite(GUN_L_SOLENOID, l_solenoid_state);
     digitalWrite(GUN_R_SOLENOID, r_solenoid_state);
 
-    if (digitalRead())
-
   }
 
   void disableMotors() {
@@ -368,6 +356,13 @@ namespace PLATFORM {
   }
 
   const char* getState() {
+    // platformState st = {
+    //   .
+    // }
+
+
+
+
     return (String(yawMotor.getPosition()) + "|" +
     String(pitchMotor.getPosition()) +  "|" +
     String(_laser) + "|").c_str();

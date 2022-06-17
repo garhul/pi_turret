@@ -27,7 +27,6 @@ inline command parseMessage (uint8_t buff[BUFF_SIZE]) {
   return c;
 }
 
-
 void fn(int len) {
  digitalWrite(PC13, !digitalRead(PC13)); 
  

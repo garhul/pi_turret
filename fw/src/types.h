@@ -6,8 +6,16 @@
     #define BUFF_LEN 8
   #endif
 
-  struct GunState {
+  // struct GunState {
     
+  // };
+
+  struct platformState {
+    uint16_t yawPos;
+    uint16_t pitchPos;
+    uint16_t camPos;
+    uint16_t vBat;
+    bool laser;
   };
 
   struct MotorProperties {
