@@ -4,7 +4,7 @@
 
 ### Device address: 0x045
 
-### Payload taxonomy:
+## Payload structure:
 
 ``` 
 struct payload {
@@ -14,17 +14,17 @@ struct payload {
 }
 ```
 
-## Properties list
+### Properties list
 |||
 |---------------------|---- |
 | ACCELERATION        | 0x00 |
 | DECELERATION        | 0x01 |
-| MAX_SPEED           | 0x02 |
-| SOFT_LIMIT_POSITION | 0x03 |
+| SOFT_LIMIT_POSITION | 0x02 |
+| HARD_LIMIT          | 0x03 |
 | CURRENT_POSITION    | 0x04 |
+  
 
-
-## Command list
+### Command list
 |||
 |-----------------------|------|
 |  SET_PROPERTY         | 0x01 |
@@ -40,3 +40,21 @@ struct payload {
 |  BARREL_NEXT_DART     | 0x0B |
 |  ENABLE_SOLENOID_MS   | 0x0C |
 |  SET_SERVO_POSITION   | 0x0D |
+
+
+### device status structure
+```
+  struct platformState {
+    uint16_t yawPos;
+    uint16_t yawSpeed;
+    uint16_t yawSoftLimitPos;
+
+    uint16_t pitchPos;
+    uint16_t pitchSpeed;
+    uint16_t pitchSoftLimitPos;
+    
+    uint16_t camPos;
+    uint16_t vBat;
+    bool laser;
+  };
+```

@@ -4,6 +4,7 @@
 #include <Arduino.h>
 #include <simplestepper.hpp>
 #include <Servo.h>
+#include <types.h>
 
 // PLATFORM
 #define YAW_DIR  PB11
@@ -11,9 +12,9 @@
 #define YAW_HOME_SENSE PA6
 #define PITCH_DIR PB1
 #define PITCH_STEP PB0
-#define MOTOR_ENABLE PA7
-
 #define PITCH_HOME_SENSE PA5
+
+#define MOTOR_ENABLE PA7
 #define CURRENT_SENSE PA0                                                              
 
 // GUNS
@@ -34,10 +35,10 @@
 
 
 // pi mount motor ?
-// #define MOTORIZED_PI_CAM
-#define CAMERA_MOTOR_STEP false
-#define CAMERA_MOTOR_DIR false;
-#define CAMERA_MOTOR_SENSOR false;
+#define MOTORIZED_PI_CAM
+#define CAMERA_MOTOR_STEP PB9
+#define CAMERA_MOTOR_DIR PB8
+#define CAMERA_MOTOR_SENSOR PA10
 
 #define Y_SPEED_MULTIPLIER 200 //(32 * 50) -> 1600 
 #define P_SPEED_MULTIPLIER 200 //
@@ -61,12 +62,11 @@ enum STATE {
   BUSY
 };
 
-
 enum PROPERTIES {
   ACCELERATION,
-  DECELERATION,
-  MAX_SPEED,
+  DECELERATION,  
   SOFT_LIMIT_POSITION,
+  HARD_LIMIT,
   CURRENT_POSITION,
 };
 
@@ -98,27 +98,28 @@ namespace PLATFORM {
   }
 
   void ISR_y_home() {    
-    Serial.println("Y_HOME_TRIGGERED!");
+    Serial.println("Y_HOME_TRIGGERED!"); // yaw doesn't need hard limit or soft limit
+    if (_homing_ & Y_HOMING_MASK || yawMotor.hardLimit) {
 
-    // if (!_homing_ & Y_HOMING_MASK) return;
-
-    yawMotor.stop();
-    yawMotor.resetPosition();
-    _homing_ -= Y_HOMING_MASK;
-    if (_homing_ == 0) //homing done
-      state = READY;    
+      yawMotor.stop();
+      yawMotor.resetPosition();
+      _homing_ = _homing_ & (~Y_HOMING_MASK);
+      if (_homing_ == 0) state = READY;  //homing done
+           
+    }
   }
 
   void ISR_p_home() {
-    Serial.println("P_HOME_TRIGGERED!");
-    // if (!_homing_ & P_HOMING_MASK) return;
-    //pitch needs to stop always at 0 and has a soft stop
-    pitchMotor.stop();
-    pitchMotor.resetPosition();
-    _homing_ -= P_HOMING_MASK;
+    Serial.println("P_HOME_TRIGGERED!");    
+    if (_homing_ & P_HOMING_MASK || pitchMotor.hardLimit) {
+      //pitch needs to stop always at 0 and has a soft stop
+      pitchMotor.stop();
+      pitchMotor.resetPosition();
+      _homing_ = _homing_ & (~P_HOMING_MASK);
     
-    if (_homing_ == 0) //homing done
-      state = READY;    
+      if (_homing_ == 0) state = READY; //homing done
+            
+    }
   }
 
   void ISR_c_home() {    
@@ -133,7 +134,27 @@ namespace PLATFORM {
     #endif    
   }
 
-  void ISR_l_barrel_pos() {      
+  inline void check_barrels() {
+    static bool last_l_state, last_r_state = HIGH;
+    
+    if ((digitalRead(GUN_L_BARREL_SENSE) != last_l_state) && 
+        (last_l_state == LOW)){ //RISING edge only
+
+      digitalWrite(GUN_L_BARREL_MOTOR, LOW); // stop seeking
+      l_barrel_seeking = false;
+    }
+    
+
+    if ((digitalRead(GUN_R_BARREL_SENSE) != last_r_state) && 
+        (last_r_state == LOW)){ //RISING edge only
+
+      digitalWrite(GUN_R_BARREL_MOTOR, LOW); // stop seeking
+      r_barrel_seeking = false;
+    }
+
+  }
+
+  inline void ISR_l_barrel_pos() {      
     Serial.println("L_BARREL_INDEX");
     digitalWrite(GUN_L_BARREL_MOTOR, LOW);
     l_barrel_seeking = false;
@@ -163,9 +184,15 @@ namespace PLATFORM {
       pinMode(CAMERA_MOTOR_SENSOR, INPUT_PULLUP);
       attachInterrupt(digitalPinToInterrupt(CAMERA_MOTOR_SENSOR), ISR_c_home, RISING);
     #endif
+    
+    pinMode(GUN_L_BARREL_SENSE, INPUT_PULLUP);
+    pinMode(GUN_R_BARREL_SENSE, INPUT_PULLUP);
 
-    attachInterrupt(digitalPinToInterrupt(GUN_L_BARREL_SENSE), ISR_l_barrel_pos, RISING);
-    attachInterrupt(digitalPinToInterrupt(GUN_R_BARREL_SENSE), ISR_r_barrel_pos, RISING);
+    // Interrupts overlap do not use
+    // attachInterrupt(digitalPinToInterrupt(GUN_L_BARREL_SENSE), ISR_l_barrel_pos, RISING);    
+    // attachInterrupt(digitalPinToInterrupt(GUN_R_BARREL_SENSE), ISR_r_barrel_pos, RISING);
+
+    ISR_r_barrel_pos();
     
     pinMode(LASER, OUTPUT);
     pinMode(MOTOR_ENABLE, OUTPUT);
@@ -236,9 +263,7 @@ namespace PLATFORM {
   }
 
   /** set the motor in a continually rotating movement at a given speed (as controlled by a joypad) */
-  void setSpeed(byte axis, bool dir, byte speed) {
-    int computed_speed; 
-    
+  void setSpeed(byte axis, int speed) {
     if (axis > 1) {
       Serial.println("axis out of range");
       Serial.print(axis, HEX);
@@ -246,8 +271,7 @@ namespace PLATFORM {
     }                                                                                                                
     
     SimpleStepper *Motor = _getStepper(axis);
-    computed_speed = ((dir) ? 1 : -1) * speed * Motor->stepsPerRev / 8;    
-    Motor->setTargetSpeed(computed_speed);
+    Motor->setTargetSpeed(speed);
   }
 
   /** rotate an axis to an absolute position as an angle  angle 
@@ -271,13 +295,14 @@ namespace PLATFORM {
   }
 
   void home(byte axis, byte spd) {
+    if (state != STATE::READY) return;
+
     if (axis > 3) {
       Serial.println("axis out of range");
       Serial.print(axis, HEX);
       return;
     }
-   
-    if (state != STATE::READY) return;
+
     state = STATE::HOMING;
     Serial.println("Homing");
     Serial.println(axis);
@@ -290,7 +315,7 @@ namespace PLATFORM {
       pitchMotor.setTargetSpeed(HOME_DIRECTION * spd * pitchMotor.stepsPerRev / 8);
 
       #ifdef MOTORIZED_PI_CAM
-      cameraMotor.setTargetSpeed(HOME_DIRECTION * spd * cameraMotor.stepsPerRev / 8) ;      
+      camMotor.setTargetSpeed(HOME_DIRECTION * spd * camMotor.stepsPerRev / 8) ;      
       #endif 
     
       return;
@@ -345,6 +370,8 @@ namespace PLATFORM {
     digitalWrite(GUN_L_SOLENOID, l_solenoid_state);
     digitalWrite(GUN_R_SOLENOID, r_solenoid_state);
 
+    //check for barrel position
+    check_barrels();
   }
 
   void disableMotors() {
@@ -355,17 +382,59 @@ namespace PLATFORM {
     digitalWrite(MOTOR_ENABLE, LOW);
   }
 
-  const char* getState() {
-    // platformState st = {
-    //   .
-    // }
+  /** returns the byte at position on the integer using little endian */
+  uint8_t getByte(uint16_t i, uint8_t index) {
+    return (i >> (index *8)) & 0xFF;
+  }
 
+  const uint8_t* getState() {    
+     platformState st = {
+      .yPos = yawMotor.getPosition(),
+      .yStepsRev = yawMotor.stepsPerRev,
+      .pPos = pitchMotor.getPosition(),
+      .pStepsRev = pitchMotor.stepsPerRev,
+      .camPos = camMotor.getPosition(),
+      .camStepsRev = camMotor.stepsPerRev,
+      .vBat = 15000,
+      .laser = digitalRead(LASER),
+    };
 
+    static uint8_t buffer[16] = {
+      // y pos
+      getByte(st.yPos, 1),
+      getByte(st.yPos, 0),
+    
+      // y steps per rev
+      getByte(st.yStepsRev, 1),
+      getByte(st.yStepsRev, 0),
 
+      // p pos
+      getByte(st.pPos, 1),
+      getByte(st.pPos, 0),
+      
+      // p steps per rev
+      getByte(st.pStepsRev, 1),
+      getByte(st.pStepsRev, 0),
 
-    return (String(yawMotor.getPosition()) + "|" +
-    String(pitchMotor.getPosition()) +  "|" +
-    String(_laser) + "|").c_str();
+      // c pos
+      getByte(st.camPos, 1),
+      getByte(st.camPos, 0),
+    
+      // c steps per rev
+      getByte(st.camStepsRev, 1),
+      getByte(st.camStepsRev, 0),
+     
+      // vBat
+      getByte(st.vBat, 1),
+      getByte(st.vBat, 0),
+    
+      // laser
+      st.laser,
+      0xFF
+    };
+    
+    return buffer;
+
   }
 
   void loadAmmoSequence() {
@@ -385,17 +454,21 @@ namespace PLATFORM {
       case ACCELERATION:        
         Motor->setAcceleration(value);
       break;
+      
       case DECELERATION:
         Motor->setDeceleration(value);
       break;
-      case MAX_SPEED:
-        // not implemented
-      break;
+      
       case SOFT_LIMIT_POSITION:
         Motor->setSoftLimit(value);
       break;
+
       case CURRENT_POSITION:
-        Motor->position = value;
+        Motor->setPosition(value);
+      break;
+
+      case HARD_LIMIT:
+        Motor->setHardLimit(value);
       break;
     }
 

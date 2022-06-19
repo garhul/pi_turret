@@ -11,33 +11,6 @@
 #define MOVE_SPEED_MASK 0b00011111
 #define DIR_MASK 0b00100000
 
-
-//******************************* I2C Codes samples **********************************//
-
-// H -> Homing move (? for all axes), spd is in units, direction is ignored
-// M -> Linear move, units represent amount of steps, spd is used here for speed of movement
-// A -> Acceleration move, units represent speed
-// R -> Radial move, move by *units* degrees, at spd speed
-// D (disable motors)
-
-
-// Gun commands
-// Base Command | value | [extra_val]
-// S/L/
-
-
-// S L 100 (Shoot Left gun (open solenoid) for 100 ms )
-// S R 50  (shoot right gun (open solenoid for 50 ms))
-// L 1  (Laser on, L0 Laser off)
-// reload gun? 
-
-// Extra commands
-//? => get state
-//? V Requests info from sensors (current, voltage, pressure)
-//? M Requests motor position information
-//? L Requests Lidar info ? ?  ? ?
-//$A => set acceleration for motors ?
-
 enum CMDS {
   NONE, // 0x00
   // MOTOR PROPERTIES
@@ -60,12 +33,10 @@ enum CMDS {
 };
 
 namespace COMMAND_DISPATCHER {
- 
-
   void dispatch(command c) {
     movementPayload mp = {
-      .speed = static_cast<uint16_t>(c.payload[1] << 8 + c.payload[2]),
-      .dir = static_cast<bool>(c.payload[0] & 1),
+      .speed = static_cast<uint16_t>((c.payload[0] << 8) + c.payload[1]),
+      .dir = static_cast<bool>(c.payload[2] & 1),
       .distance = static_cast<uint16_t>((c.payload[3] << 8 + c.payload[4]))
     };
     
@@ -73,6 +44,18 @@ namespace COMMAND_DISPATCHER {
       .propertyId = static_cast<uint8_t>(c.payload[1]),
       .value = static_cast<uint16_t>((c.payload[2] << 8) + c.payload[3])
     };
+
+    Serial.print("[[");
+    Serial.print(c.payload[0], HEX);
+    Serial.print(" ");
+    Serial.print(c.payload[1], HEX);
+    Serial.print(" ");
+    Serial.print(c.payload[2], HEX);
+    Serial.println("]]");
+
+    int spd = ((mp.dir) ? 1 : -1) * mp.speed; 
+    Serial.println(mp.speed);
+    Serial.println(spd);
 
     switch (c.cmd) {
       case CMDS::SET_PROPERTY:        
@@ -127,8 +110,8 @@ namespace COMMAND_DISPATCHER {
       break;
 
       case CMDS::SET_TARGET_SPEED: // Continue motor movement by altering their current speed        
-        Serial.println("Accelerating");     
-        PLATFORM::setSpeed(c.channel, mp.dir, mp.speed);      
+        Serial.println("Accelerating");
+        PLATFORM::setSpeed(c.channel, spd);      
       break;
 
       case CMDS::MOVE_TO_ANGLE: // Radial move to an specific angle       

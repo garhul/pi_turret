@@ -23,7 +23,7 @@ class SimpleStepper {
       DISTANCE
     };
 
-    uint16_t stepsPerRev = 0;
+    uint16_t stepsPerRev = 0;    
     float acceleration = 0.97;
     float deceleration = 1.03;
     int stepPin;
@@ -31,6 +31,7 @@ class SimpleStepper {
     
     bool direction = true;
     bool targetDirection = true;
+    bool hardLimit = false;
     
     Modes mode = CONTINUOUS;
     
@@ -40,6 +41,7 @@ class SimpleStepper {
     
     uint32_t position = 0;
     uint32_t softLimitPosition = 0;
+    
     int32_t targetPosition = 0;
     
     States state = STOPPED;
@@ -60,18 +62,29 @@ class SimpleStepper {
       this->position = 0;
     }
 
-    void setAcceleration(uint16_t val) {     
+    void setPosition(uint32_t p) {
+      this->position = p;
+    }
+
+    void setAcceleration(uint16_t val) { 
+      if (val == 0) return;
       this->acceleration =  10000 / val; // TODO::map from 0.8 to 1.2 ;
     }
 
     void setDeceleration(uint16_t val) {
+      if (val == 0) return;
       this->deceleration = 10000 / val;
+    }
+
+    void setHardLimit(bool en) {
+      this->hardLimit = en;
     }
 
     void setSoftLimit(uint32_t limit) {
       this->softLimitPosition = limit;
     }
-    /** returns the position as an absolute step */
+    
+    /* returns position from 0 to stepsPerRev */
     uint16_t getPosition() {
       return this->position % this->stepsPerRev;
     }
@@ -122,8 +135,14 @@ class SimpleStepper {
         }
       }
 
-      // if (this->softLimitPosition != 0 || this->position > this->softLimitPosition)
-      //   return;
+      if ((this->softLimitPosition != 0) &&
+          ((this->position >= this->softLimitPosition) && this->direction ) &&
+          ((this->position <= this->softLimitPosition) && !this->direction)){
+          Serial.println("Soft limit triggered");
+          Serial.println(String(this->position) + " -- " + String(this->softLimitPosition));          
+          this->state = STOPPED;
+          return;
+      }
 
       this->step(); 
     }
@@ -168,7 +187,7 @@ class SimpleStepper {
     }
 
   private:
-    int speed = 0;    
+    int16_t speed = 0;    
     inline void step() {
       digitalWrite(this->stepPin, HIGH);
       delayMicroseconds(PULSE_WIDTH);
