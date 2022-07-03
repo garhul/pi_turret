@@ -21,7 +21,7 @@ inline command parseMessage (uint8_t buff[BUFF_SIZE]) {
   command c = {
     .cmd = static_cast<uint8_t>(buff[0] >> 2),
     .channel = static_cast<uint8_t>(buff[0] & 0x03),
-    .payload = {buff[1],buff[2],buff[3],buff[4]}
+    .payload = {buff[1],buff[2],buff[3],buff[4],buff[5],buff[6],buff[7],buff[8]}
   };
   
   return c;
@@ -45,15 +45,16 @@ void fn(int len) {
 }
 
 void i2c_req() {
-  Serial.println("un req");  
+  // Serial.println("un req");  
   const uint8_t * buffer = PLATFORM::getState();
-
+  Serial.print("[");
   for (int i= 0; i< 16; i++) {
     Serial.print(buffer[i], HEX);
     Serial.print(" ");
   }
-  Wire.write(buffer, 16);  
-  
+  Serial.println("]");
+
+  Wire.write(buffer, 16);
   digitalWrite(PC13, !digitalRead(PC13)); 
 } 
 

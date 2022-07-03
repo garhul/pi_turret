@@ -1,5 +1,6 @@
 import './App.css';
-import {GamepadView, VideoFeed, RadarView } from './Controls';
+import {GamepadView, VideoFeed, RadarView, PlatformStatus } from './Controls';
+import React from 'react';
 
 function App() {
   return (
@@ -7,6 +8,7 @@ function App() {
       <VideoFeed></VideoFeed>
       <div style={{"display":"flex-column"}}>
         <GamepadView></GamepadView>
+        <PlatformStatus></PlatformStatus>
         <RadarView></RadarView>
       </div>
     </div>

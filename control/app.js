@@ -1,12 +1,12 @@
 const { WebSocketServer } = require('ws');
-const utils = require('./utils');
-
+const Platform = require('./utils');
 const wss = new WebSocketServer({ port: 3030 });
 
+
+Platform.initialize();
 wss.on('listening',()=> {
   console.log('websocket started, awaiting connections...');
 });
-
 
 const clients = [];
 wss.on('connection', function connection(ws) {
@@ -41,4 +41,5 @@ wss.on('connection', function connection(ws) {
   });
 
   ws.send(JSON.stringify({ev:'SV',msg:'ok'}));
+  setInterval({ev:'PLATFORM_STATE', msg:Platform.State}, 300);
 });

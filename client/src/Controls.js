@@ -1,3 +1,4 @@
+import React from "react";
 import { useEffect, useState } from "react";
 import { BUS, PAD } from "./io";
 
@@ -62,8 +63,6 @@ export function VideoFeed() {
 }
 
 export function RadarView() {
-
-
   return (
     <div id="RadarView">
       <div className="controlHeader">
@@ -76,6 +75,40 @@ export function RadarView() {
           <circle cx="0.1" cy="1" r="0.05" fill="#080" className="target" />        
           <circle cx="-0.2" cy="-0.5" r="0.05" fill="#080" className="target" />        
         </svg>
+      </div>
+    </div>
+  )
+}
+
+export function PlatformStatus() {
+  let [state, updateState] = useState({
+    yawPos:0,
+    yawStepsPerRev:800,
+    pitchPos:0,
+    ptichStepsPerRev: 800,
+    camPos:0,
+    camStepsPerRev:3200,
+    vBat:1500, //expresed in mV
+    laser:0,
+  });
+
+  useEffect(() => {
+    BUS.on('PLATFORM_STATE',(d) => updateState(d));           
+  }, []);
+  
+  return (
+    <div id="PlatformState">
+      <div className="controlHeader">
+        <h3>Platform State</h3>
+      </div>
+      <div className="controlBody">
+        <ul>
+          <li>yaw: <span>${(state.yawPos / state.yawStepsPerRev) * 360}</span></li>
+          <li>pitch: <span>${(state.yawPos / state.yawStepsPerRev) * 360} </span></li>
+          <li>cam: <span>${(state.yawPos / state.yawStepsPerRev) * 360} </span></li>
+          <li></li>
+          <li>vBat: <span>state.vBat</span></li>
+        </ul>
       </div>
     </div>
   )

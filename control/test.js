@@ -67,9 +67,10 @@ async function test_read() {
 (async function() {
   console.log("******** PLATFORM STATE *************");
   console.dir(platform.getState());
-
+  platform.moveAxis(Platform.AXES.yaw, - 2500, 300);
+  await delay(2000);
   platform.setAxisTargetSpeed(Platform.AXES.yaw, 2500)
-  await delay(3000);
+  await delay(2000);
   platform.stop(Platform.AXES.yaw);
   console.dir(platform.getState());
 

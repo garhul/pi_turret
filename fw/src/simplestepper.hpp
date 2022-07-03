@@ -136,13 +136,21 @@ class SimpleStepper {
       }
 
       if ((this->softLimitPosition != 0) &&
-          ((this->position >= this->softLimitPosition) && this->direction ) &&
+          ((this->position >= this->softLimitPosition) && this->direction ) ||
           ((this->position <= this->softLimitPosition) && !this->direction)){
           Serial.println("Soft limit triggered");
           Serial.println(String(this->position) + " -- " + String(this->softLimitPosition));          
           this->state = STOPPED;
           return;
       }
+      
+      //  if (((this->position >= this->targetPosition) && this->direction ) ||
+      //    ((this->position <= this->targetPosition) && !this->direction)) {      
+      //   Serial.println("Target Position reached");   
+      //    this->state = STOPPED;
+      //    return;
+      //  }
+
 
       this->step(); 
     }
@@ -168,11 +176,12 @@ class SimpleStepper {
     /** 
      * Turn the motor in the given direction   
     **/
-    void turn(uint16_t steps, int speed) {      
+    void turn(uint16_t steps, int speed) {
+      this->mode = Modes::DISTANCE;
       this->targetDirection = (speed > 0) ? 1 : 0;        
       this->targetSpeed = speed;
       this->targetPosition = (speed > 0)? this->position + steps : this->position - steps;       
-      
+      Serial.println(this->targetPosition);
 
       // if it was stopped start accelerating
       if (this->state == STOPPED) {
@@ -183,7 +192,6 @@ class SimpleStepper {
       }
 
       this->lastUpdate = 0;
-      
     }
 
   private:

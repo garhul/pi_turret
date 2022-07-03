@@ -15,7 +15,7 @@
 #define PITCH_HOME_SENSE PA5
 
 #define MOTOR_ENABLE PA7
-#define CURRENT_SENSE PA0                                                              
+#define VBAT_SENSE PA0                                                              
 
 // GUNS
 #define GUN_L_SERVO PA1
@@ -82,6 +82,8 @@ namespace PLATFORM {
 
   unsigned long l_solenoid_on_time_us = 100;
   unsigned long r_solenoid_on_time_us = 100;
+
+  uint8_t statebuffer[16];
 
   SimpleStepper yawMotor(YAW_STEPS_PER_REV, YAW_DIR, YAW_STEP);
   SimpleStepper pitchMotor(PITCH_STEPS_PER_REV, PITCH_DIR, PITCH_STEP);
@@ -239,8 +241,7 @@ namespace PLATFORM {
   }
 
   /** Move an axis a number of steps at a given speed */
-  void move (byte axis, bool dir, byte speed, byte steps) {    
-    int computed_speed;
+  void move (byte axis, int speed, uint16_t steps) {        
     if (axis > 1) {
       Serial.println("axis out of range");
       Serial.print(axis, HEX);
@@ -248,13 +249,9 @@ namespace PLATFORM {
     }
 
     SimpleStepper *Motor = _getStepper(axis);
-
     if(Motor->state != SimpleStepper::RUNNING) return; 
-
-    computed_speed = ((dir) ? 1 : -1) * speed * Motor->stepsPerRev;
-        
-    if (computed_speed != 0)
-      Motor->turn(steps, computed_speed / 16);
+    if (speed != 0)
+      Motor->turn(steps, speed);
   }
 
   void stopMovement(byte axis) {
@@ -395,45 +392,46 @@ namespace PLATFORM {
       .pStepsRev = pitchMotor.stepsPerRev,
       .camPos = camMotor.getPosition(),
       .camStepsRev = camMotor.stepsPerRev,
-      .vBat = 15000,
+      .vBat = analogRead(VBAT_SENSE),
       .laser = digitalRead(LASER),
     };
 
-    static uint8_t buffer[16] = {
-      // y pos
-      getByte(st.yPos, 1),
-      getByte(st.yPos, 0),
-    
-      // y steps per rev
-      getByte(st.yStepsRev, 1),
-      getByte(st.yStepsRev, 0),
+    Serial.println(st.yPos);
 
-      // p pos
-      getByte(st.pPos, 1),
-      getByte(st.pPos, 0),
-      
-      // p steps per rev
-      getByte(st.pStepsRev, 1),
-      getByte(st.pStepsRev, 0),
+    // y pos
+    statebuffer[0] = getByte(st.yPos, 1);
+    statebuffer[1] = getByte(st.yPos, 0);
+  
+    // y steps per rev
+    statebuffer[2] = getByte(st.yStepsRev, 1);
+    statebuffer[3] = getByte(st.yStepsRev, 0);
 
-      // c pos
-      getByte(st.camPos, 1),
-      getByte(st.camPos, 0),
+    // p pos
+    statebuffer[4] = getByte(st.pPos, 1);
+    statebuffer[5] = getByte(st.pPos, 0);
     
-      // c steps per rev
-      getByte(st.camStepsRev, 1),
-      getByte(st.camStepsRev, 0),
-     
-      // vBat
-      getByte(st.vBat, 1),
-      getByte(st.vBat, 0),
+    // p steps per rev
+    statebuffer[6] = getByte(st.pStepsRev, 1);
+    statebuffer[7] = getByte(st.pStepsRev, 0);
+
+    // c pos
+    statebuffer[8] = getByte(st.camPos, 1);
+    statebuffer[9] = getByte(st.camPos, 0);
+  
+    // c steps per rev
+    statebuffer[10] = getByte(st.camStepsRev, 1);
+    statebuffer[11] = getByte(st.camStepsRev, 0);
     
-      // laser
-      st.laser,
-      0xFF
-    };
+    // vBat
+    statebuffer[12] = getByte(st.vBat, 1);
+    statebuffer[13] = getByte(st.vBat, 0);
+  
+    // laser
+    statebuffer[14] = st.laser;
+    statebuffer[15] = 0xFF;
     
-    return buffer;
+    
+    return static_cast<const uint8_t*>(static_cast<void*>(statebuffer));
 
   }
 

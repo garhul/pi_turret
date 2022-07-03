@@ -32,7 +32,7 @@
   };
   
   struct movementPayload {
-    uint16_t speed: 15;
+    uint16_t speed;
     bool dir;
     uint16_t distance;
   };

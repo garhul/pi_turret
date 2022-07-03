@@ -37,7 +37,7 @@ namespace COMMAND_DISPATCHER {
     movementPayload mp = {
       .speed = static_cast<uint16_t>((c.payload[0] << 8) + c.payload[1]),
       .dir = static_cast<bool>(c.payload[2] & 1),
-      .distance = static_cast<uint16_t>((c.payload[3] << 8 + c.payload[4]))
+      .distance = static_cast<uint16_t>((c.payload[3] << 8) + c.payload[4])
     };
     
     propertyPayload p = {
@@ -56,6 +56,7 @@ namespace COMMAND_DISPATCHER {
     int spd = ((mp.dir) ? 1 : -1) * mp.speed; 
     Serial.println(mp.speed);
     Serial.println(spd);
+    Serial.println(mp.distance);
 
     switch (c.cmd) {
       case CMDS::SET_PROPERTY:        
@@ -101,7 +102,7 @@ namespace COMMAND_DISPATCHER {
 
       case CMDS::MOVE_STEPS: //Move motor by steps 
         Serial.println("Advancing steps");        
-        PLATFORM::move(c.channel, mp.dir, mp.speed, mp.distance);
+        PLATFORM::move(c.channel, spd, mp.distance);
       break;
 
       case CMDS::HOME:
@@ -115,7 +116,7 @@ namespace COMMAND_DISPATCHER {
       break;
 
       case CMDS::MOVE_TO_ANGLE: // Radial move to an specific angle       
-        Serial.println("move to angle") ;        
+        Serial.println("Move to angle") ;        
         PLATFORM::setAngle(c.channel, mp.dir, mp.speed, mp.distance);
       break;
 
